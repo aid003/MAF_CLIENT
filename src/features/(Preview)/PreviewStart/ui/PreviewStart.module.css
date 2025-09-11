@@ -1,0 +1,142 @@
+.startContainer {
+  width: 100vw;
+  height: 100svh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-image: url("/mask-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.headerContainer {
+  display: flex;
+  flex-direction: column;
+  margin-left: 3rem;
+}
+
+@-webkit-keyframes typing {
+  0% {
+    width: 0em;
+  }
+  20% {
+    width: 0.9em;
+  }
+  40% {
+    width: 1.63em;
+  }
+  60% {
+    width: 2.4em;
+  }
+  80% {
+    width: 2.7em;
+  }
+  100% {
+    width: 2.9em;
+  }
+}
+@keyframes typing {
+  0% {
+    width: 0em;
+  }
+  20% {
+    width: 0.9em;
+  }
+  40% {
+    width: 1.63em;
+  }
+  60% {
+    width: 2.4em;
+  }
+  80% {
+    width: 2.7em;
+  }
+  100% {
+    width: 2.9em;
+  }
+}
+
+@-webkit-keyframes blink-caret {
+  50% {
+    border-color: transparent;
+  }
+}
+@keyframes blink-caret {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.typedText {
+  margin-top: 8rem;
+  margin-bottom: 0;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: bold;
+  font-size: 19em;
+  letter-spacing: -0.02em;
+  color: white;
+
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+
+  border-right: 0.04em solid white;
+
+  -webkit-animation: typing 5s step-end infinite alternate,
+    blink-caret 0.5s step-end infinite alternate;
+  animation: typing 5s step-end infinite alternate,
+    blink-caret 0.5s step-end infinite alternate;
+}
+
+.descriptionContainer {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+.descriptionItem {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 100;
+  font-size: 32px;
+  font-style: italic;
+  color: #ffffff;
+  opacity: 0.76;
+}
+
+.buttonContainer {
+  margin-top: 4rem;
+  margin-left: 4rem;
+  display: flex;
+}
+
+.buttonChat,
+.buttonMore {
+  all: unset;
+  padding: 16px 24px;
+  font-family: "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s ease;
+}
+
+.buttonChat {
+  background-image: url("/chat-lay.svg");
+  color: black;
+}
+
+.buttonMore {
+  background-image: url("/more-lay.svg");
+  color: #ffffff;
+}
+
+.buttonChat:hover,
+.buttonMore:hover {
+  transform: scale(1.03);
+}
