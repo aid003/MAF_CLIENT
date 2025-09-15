@@ -12,8 +12,23 @@ interface ChatMessage {
   sender: "assistant" | "user";
   text: string;
   searchType?: string;
+  useRAG?: boolean;
   loading?: boolean;
   id?: string;
+}
+
+interface ChatHistoryMessage {
+  sender: "assistant" | "user";
+  text: string;
+  searchType?: string;
+  useRAG?: boolean;
+}
+
+interface ChatPayload {
+  text: string;
+  searchType: string;
+  useRAG: boolean;
+  history: ChatHistoryMessage[];
 }
 
 export default function Chat() {
@@ -30,6 +45,7 @@ export default function Chat() {
   ]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [searchType, setSearchType] = useState<string>("1");
+  const [useRAG, setUseRAG] = useState<boolean>(true);
   const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState<boolean>(false);
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
@@ -63,7 +79,7 @@ export default function Chat() {
 
     socket.on(
       "chat message",
-      (msg: string | { text: string; searchType?: string }) => {
+      (msg: string | { text: string; searchType?: string; useRAG?: boolean }) => {
         // Удаляем предыдущее сообщение с индикатором загрузки
         setMessages((prev) => prev.filter((m) => m.id !== "loading"));
 
@@ -72,7 +88,12 @@ export default function Chat() {
         } else if (msg.text) {
           setMessages((prev) => [
             ...prev,
-            { sender: "assistant", text: msg.text, searchType: msg.searchType },
+            { 
+              sender: "assistant", 
+              text: msg.text, 
+              searchType: msg.searchType,
+              useRAG: msg.useRAG 
+            },
           ]);
         }
         setIsLoadingSearch(false);
@@ -115,12 +136,31 @@ export default function Chat() {
     }
     if (newMessage.trim() === "" || isLoadingSearch) return;
 
-    const payload = { text: newMessage, searchType };
+    // Получаем количество сообщений для истории из переменной окружения
+    const historyLimit = parseInt(process.env.NEXT_PUBLIC_CHAT_HISTORY_LIMIT || "10", 10);
+    
+    // Фильтруем историю: берем только последние сообщения, исключая текущее загружающееся
+    const chatHistory = messages
+      .filter(msg => msg.id !== "loading") // Исключаем текущий индикатор загрузки
+      .slice(-historyLimit) // Берем последние N сообщений
+      .map(msg => ({
+        sender: msg.sender,
+        text: msg.text,
+        searchType: msg.searchType,
+        useRAG: msg.useRAG
+      }));
+
+    const payload: ChatPayload = { 
+      text: newMessage, 
+      searchType, 
+      useRAG,
+      history: chatHistory
+    };
     socketService.emit("chat message", payload);
 
     setMessages((prev) => [
       ...prev,
-      { sender: "user", text: newMessage, searchType },
+      { sender: "user", text: newMessage, searchType, useRAG },
       {
         sender: "assistant",
         text: "Генерирую ответ...",
@@ -217,9 +257,11 @@ export default function Chat() {
                         isStreaming={!!msg.loading}
                         speed={5}
                       />
-                      {msg.searchType && (
+                      {(msg.searchType || msg.useRAG !== undefined) && (
                         <Typography variant="caption" sx={{ mt: 0.5 }}>
-                          Тип поиска: {msg.searchType}
+                          {msg.searchType && `Тип поиска: ${msg.searchType}`}
+                          {msg.searchType && msg.useRAG !== undefined && " • "}
+                          {msg.useRAG !== undefined && `RAG: ${msg.useRAG ? "включен" : "отключен"}`}
                         </Typography>
                       )}
                     </>
@@ -245,6 +287,8 @@ export default function Chat() {
         setIsLoadingVoice={setIsLoadingVoice}
         searchType={searchType}
         setSearchType={setSearchType}
+        useRAG={useRAG}
+        setUseRAG={setUseRAG}
         sendMessage={sendMessage}
         mode={mode}
       />

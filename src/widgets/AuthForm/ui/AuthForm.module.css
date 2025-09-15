@@ -1,0 +1,46 @@
+.authForm {
+  min-height: 25rem;
+  width: 27rem;
+  max-width: 27rem;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-color);
+}
+
+.button {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.guestButton {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.guestButton:hover {
+  background-color: var(--accent-color-hover);
+}
+
+.loginButton {
+  background-color: transparent;
+  border: 2px solid var(--accent-color);
+  color: var(--accent-color);
+}
+
+.loginButton:hover {
+  background-color: var(--accent-color-hover);
+  color: white;
+}

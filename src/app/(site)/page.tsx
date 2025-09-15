@@ -14,21 +14,20 @@ export default function Home() {
   const features = [
     {
       icon: <FiUpload color="#0DE6BE" size={30} />,
-      title: "Легкая загрузка",
-      description: "Поддержка PDF с возможностями предпросмотра",
+      title: "Загрузка документов",
+      description: "Загружайте PDF файлы и получайте мгновенный предпросмотр содержимого",
       route: "/upload",
     },
     {
       icon: <FiSearch color="#0DE6BE" size={30} />,
-      title: "Умный поиск",
-      description:
-        "Выбирайте между семантичиским, гибридным и поиском по ключевым словам",
+      title: "Поиск по документам",
+      description: "Находите нужную информацию с помощью умного поиска по смыслу и ключевым словам",
       route: "/search",
     },
     {
       icon: <GoHistory color="#0DE6BE" size={30} />,
-      title: "История чатов",
-      description: "Отслеживайте и возвращайтесь к предыдущим запросам",
+      title: "История запросов",
+      description: "Просматривайте все ваши предыдущие поисковые запросы и результаты",
       route: "/history",
     },
   ];
@@ -50,18 +49,18 @@ export default function Home() {
         <Box
           sx={{
             mt: 4,
-            px: 1.5,
-            py: 1.2,
-            borderRadius: 2,
-            background: (theme) =>
-              theme.palette.mode === "dark"
-                ? `linear-gradient(135deg, #0DE6BE22 0%, #161B22 100%)`
-                : `linear-gradient(135deg, #e0f7f4 0%, #fff 100%)`,
-            boxShadow: 2,
+            p: 3,
+            borderRadius: "20px",
+            backgroundColor: "background.paper",
             maxWidth: "900px",
             width: "100%",
             textAlign: "center",
             userSelect: "none",
+            boxShadow: 2,
+            transition: "box-shadow 0.3s ease",
+            "&:hover": {
+              boxShadow: 4,
+            },
           }}
         >
           <Typography
@@ -69,17 +68,9 @@ export default function Home() {
             component="h1"
             sx={{
               fontWeight: 600,
-              letterSpacing: "0.04em",
               color: (theme) =>
                 theme.palette.mode === "dark" ? "#0DE6BE" : "#00bfae",
-              fontFamily: "Montserrat, Arial, sans-serif",
-              mb: 1,
-              textShadow: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "0 2px 12px #0DE6BE44"
-                  : "0 2px 8px #00bfae22",
-              pointerEvents: "none",
-              userSelect: "none",
+              mb: 2,
             }}
           >
             Интелектуальный текстовый агент — МАФ
@@ -88,32 +79,15 @@ export default function Home() {
             variant="body1"
             component="h2"
             sx={{
-              color: (theme) =>
-                theme.palette.mode === "dark" ? "#C9D1D9" : "#222",
-              fontFamily: "Nunito, Arial, sans-serif",
-              fontWeight: 300,
-              lineHeight: 1.4,
-              fontSize: { xs: "0.98rem", sm: "1.08rem", md: "1.15rem" },
-              background: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "rgba(22,27,34,0.7)"
-                  : "rgba(255,255,255,0.85)",
-              borderRadius: 1.5,
-              px: 1.5,
-              py: 0.7,
-              display: "inline-block",
-              boxShadow: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "0 2px 8px 0 #0DE6BE22"
-                  : "0 2px 8px 0 #00bfae22",
-              pointerEvents: "none",
-              userSelect: "none",
+              color: "text.primary",
+              lineHeight: 1.6,
+              fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" },
             }}
           >
-            Загрузите книги и разблокируйте новые возможности с вашим ИИ агентом.
+            Загружайте документы и получайте ответы на ваши вопросы от ИИ-ассистента.
             <br />
-            Быстрый поиск, понимание смысла и контекста диалога. <br />
-            Используйте проверенную информацию из достоверных источников.
+            Ищите информацию по смыслу, а не только по точным словам. <br />
+            Все ответы основаны на содержимом ваших загруженных документов.
           </Typography>
         </Box>
 

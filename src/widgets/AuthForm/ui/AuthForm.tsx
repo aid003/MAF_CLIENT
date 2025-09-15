@@ -1,106 +1,150 @@
 "use client";
-import { useEffect, useState } from "react";
-import { TextField, Button, Typography, Box } from "@mui/material";
-import { useAuth } from "../model/useAuth";
-import { useRouter } from "next/navigation";
 
-export default function AuthForm() {
-  const { login, register, fetchUser } = useAuth();
+import { useState } from 'react';
+import { useAuth } from '../model/useAuth';
+import { Box, TextField, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+
+function AuthForm() {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  const router = useRouter();
-
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const { login, register, loginAsGuest } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    try {
-      if (isRegistering) {
-        await register(name, email, password);
-      } else {
-        await login(email, password);
-      }
+    
+    // Показываем модальное окно вместо попытки авторизации
+    setShowBlockModal(true);
+  };
 
-      router.push("/");
-    } catch (err) {
-      setError((err as Error).message);
-    }
+  const handleGuestLogin = () => {
+    loginAsGuest();
+  };
+
+  const handleCloseModal = () => {
+    setShowBlockModal(false);
   };
 
   return (
     <Box
       sx={{
-        minHeight: "22rem",
-        width: "27rem",
-        maxWidth: "27rem",
-        mx: "auto",
-        p: 3,
         display: "flex",
         flexDirection: "column",
-        gap: 4,
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-        boxShadow: 3,
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        padding: 2,
       }}
     >
-      <Typography variant="h5" component="h2" textAlign="center">
-        {isRegistering ? "Регистрация" : "Вход"}
-      </Typography>
-      {error && (
-        <Typography color="error" textAlign="center">
-          {error}
-        </Typography>
-      )}
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 400,
+          padding: 3,
+          border: "1px solid #ccc",
+          borderRadius: 2,
+          boxShadow: 3,
+        }}
       >
-        {isRegistering && (
+        <Typography variant="h5" component="h2" textAlign="center">
+          {isRegistering ? "Регистрация" : "Вход"}
+        </Typography>
+        {error && (
+          <Typography color="error" textAlign="center">
+            {error}
+          </Typography>
+        )}
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}
+        >
+          {isRegistering && (
+            <TextField
+              label="Имя"
+              variant="outlined"
+              fullWidth
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          )}
           <TextField
-            label="Имя"
+            label="Email"
+            type="email"
             variant="outlined"
             fullWidth
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
-        )}
-        <TextField
-          label="Email"
-          type="email"
+          <TextField
+            label="Пароль"
+            type="password"
+            variant="outlined"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" variant="contained" color="primary" fullWidth>
+            {isRegistering ? "Зарегистрироваться" : "Войти"}
+          </Button>
+        </form>
+
+        <Button
+          onClick={handleGuestLogin}
           variant="outlined"
+          color="secondary"
           fullWidth
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <TextField
-          label="Пароль"
-          type="password"
-          variant="outlined"
-          fullWidth
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <Button type="submit" variant="contained" color="primary" fullWidth>
-          {isRegistering ? "Зарегистрироваться" : "Войти"}
+          sx={{ mt: 1 }}
+        >
+          Войти как гость
         </Button>
-      </form>
-      <Button
-        onClick={() => setIsRegistering(!isRegistering)}
-        variant="text"
-        color="secondary"
-      >
-        {isRegistering ? "Войти" : "Зарегистрироваться"}
-      </Button>
+
+        <Button
+          onClick={() => setIsRegistering(!isRegistering)}
+          variant="text"
+          color="secondary"
+          fullWidth
+          sx={{ mt: 1 }}
+        >
+          {isRegistering
+            ? "Уже есть аккаунт? Войти"
+            : "Нет аккаунта? Зарегистрироваться"}
+        </Button>
+      </Box>
+
+      {/* Модальное окно блокировки авторизации */}
+      <Dialog open={showBlockModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography variant="h6" component="div">
+            Блокировка авторизации
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            В текущей конфигурации ПО ваше действие не предусмотрено настройками безопасности. 
+            Совершите вход через гостевой режим.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Понятно
+          </Button>
+          <Button onClick={() => {
+            handleCloseModal();
+            handleGuestLogin();
+          }} variant="contained" color="primary">
+            Войти как гость
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
+
+export default AuthForm;

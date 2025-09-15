@@ -14,6 +14,17 @@ export async function GET(req: NextRequest) {
 
   const token = authHeader.split(" ")[1];
 
+  // Проверка на гостевой токен
+  if (token === "guest") {
+    return NextResponse.json({
+      user: {
+        id: "guest",
+        name: "Гость",
+        email: "guest@example.com"
+      }
+    });
+  }
+
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
 

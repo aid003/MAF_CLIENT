@@ -5,7 +5,13 @@ class SocketService {
 
   public connect(url: string): Socket {
     if (!this.socket) {
-      this.socket = io(url);
+      this.socket = io(url, {
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        forceNew: true,
+        withCredentials: true,
+        autoConnect: true
+      });
     }
     return this.socket;
   }

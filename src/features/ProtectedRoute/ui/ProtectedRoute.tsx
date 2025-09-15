@@ -14,14 +14,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
 
   const { isAuthenticated } = useAppSelector((state) => state.user);
-  // const { isAuthenticated } = { state: { user: { isAuthenticated: true } } };
 
   useEffect(() => {
-    // Авторизация отключена - редирект закомментирован
-    // if (!isAuthenticated) {
-    //   router.push("/auth");
-    // }
-  }, [isAuthenticated, router]);
+    // Проверяем аутентификацию и перенаправляем если не авторизован
+    if (!isAuthenticated && pathname !== "/auth") {
+      router.push("/auth");
+    }
+  }, [isAuthenticated, pathname, router]);
 
   const userBadger = ["/profile", "/auth"].includes(pathname);
 

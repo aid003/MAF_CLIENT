@@ -30,6 +30,8 @@ interface ControlPanelProps {
   setIsLoadingVoice: Dispatch<SetStateAction<boolean>>;
   searchType: string;
   setSearchType: Dispatch<SetStateAction<string>>;
+  useRAG: boolean;
+  setUseRAG: Dispatch<SetStateAction<boolean>>;
   sendMessage: () => void;
   mode: "light" | "dark";
 }
@@ -44,6 +46,8 @@ export default function ControlPanel({
   setIsLoadingVoice,
   searchType,
   setSearchType,
+  useRAG,
+  setUseRAG,
   sendMessage,
   mode,
 }: ControlPanelProps) {
@@ -176,25 +180,44 @@ export default function ControlPanel({
                 justifyContent: "space-between",
               }}
             >
-              <FormControl
-                variant="outlined"
-                size="small"
-                sx={{ minWidth: 120 }}
-              >
-                <InputLabel>Тип поиска</InputLabel>
-                <Select
-                  label="Тип поиска"
-                  value={searchType}
-                  onChange={(e) => setSearchType(e.target.value)}
-                  disabled={isLoadingSearch}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <FormControl
+                  variant="outlined"
+                  size="small"
+                  sx={{ minWidth: 120 }}
                 >
-                  <MenuItem value="1">Гибридный поиск (alpha: 0.7)</MenuItem>
-                  <MenuItem value="2">
-                    Семантический (по сходству векторов)
-                  </MenuItem>
-                  <MenuItem value="3">Ключевые слова</MenuItem>
-                </Select>
-              </FormControl>
+                  <InputLabel>Тип поиска</InputLabel>
+                  <Select
+                    label="Тип поиска"
+                    value={searchType}
+                    onChange={(e) => setSearchType(e.target.value)}
+                    disabled={isLoadingSearch}
+                  >
+                    <MenuItem value="1">Гибридный поиск (alpha: 0.7)</MenuItem>
+                    <MenuItem value="2">
+                      Семантический (по сходству векторов)
+                    </MenuItem>
+                    <MenuItem value="3">Ключевые слова</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl
+                  variant="outlined"
+                  size="small"
+                  sx={{ minWidth: 140 }}
+                >
+                  <InputLabel>Режим ответа</InputLabel>
+                  <Select
+                    label="Режим ответа"
+                    value={useRAG ? "rag" : "no-rag"}
+                    onChange={(e) => setUseRAG(e.target.value === "rag")}
+                    disabled={isLoadingSearch}
+                  >
+                    <MenuItem value="rag">По документам</MenuItem>
+                    <MenuItem value="no-rag">Общий ответ</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
 
               {isVoiceInputEnabled && (
                 <Button
