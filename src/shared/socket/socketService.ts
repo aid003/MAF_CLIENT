@@ -5,6 +5,7 @@ class SocketService {
 
   public connect(url: string): Socket {
     if (!this.socket) {
+      console.log("SocketService: Подключаемся к", url);
       this.socket = io(url, {
         transports: ["websocket", "polling"],
         timeout: 20000,
@@ -14,6 +15,19 @@ class SocketService {
         path: "/socket.io/",
         upgrade: true,
         rememberUpgrade: true,
+      });
+
+      // Добавляем логирование событий
+      this.socket.on("connect", () => {
+        console.log("SocketService: Подключен с ID:", this.socket?.id);
+      });
+
+      this.socket.on("disconnect", (reason) => {
+        console.log("SocketService: Отключен. Причина:", reason);
+      });
+
+      this.socket.on("connect_error", (error) => {
+        console.error("SocketService: Ошибка подключения:", error);
       });
     }
     return this.socket;

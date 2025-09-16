@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Box,
@@ -12,21 +12,125 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import axios from "axios";
 import { FileRejection } from "react-dropzone";
+import { socketService } from "../../../shared/socket/socketService";
 
 export default function UploadPage() {
   const theme = useTheme();
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [processingProgress, setProcessingProgress] = useState<number>(0);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [currentProcessingStep, setCurrentProcessingStep] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const socketIdRef = useRef<string | null>(null);
+  const uploadFallbackTimerRef = useRef<number | null>(null);
+  const lastUploadProgressTsRef = useRef<number>(0);
+
+  // Подключаемся к Socket.IO при монтировании компонента
+  useEffect(() => {
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5041";
+    console.log("Подключаемся к Socket.IO:", socketUrl);
+    const socket = socketService.connect(socketUrl);
+    
+    socket.on("connect", () => {
+      console.log("Socket.IO подключен:", socket.id);
+      socketIdRef.current = socket.id || null;
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Socket.IO отключен");
+      socketIdRef.current = null;
+    });
+
+    // Слушаем события прогресса загрузки
+    socket.on("upload_progress", (data: any) => {
+      console.log("Получен прогресс загрузки:", data);
+      
+      switch (data.type) {
+        case "file_start":
+          setCurrentProcessingStep(`Начинаю обработку файла ${data.filename} (${data.fileIndex}/${data.totalFiles})`);
+          setProcessingProgress(data.progress);
+          break;
+        case "processing_start":
+          setCurrentProcessingStep(data.message);
+          break;
+        case "file_complete":
+          setCurrentProcessingStep(`Файл ${data.filename} обработан (${data.fileIndex}/${data.totalFiles})`);
+          setProcessingProgress(data.progress);
+          break;
+        case "all_complete":
+          setProcessingProgress(100);
+          setCurrentProcessingStep("Обработка завершена!");
+          setSuccessMessage(data.message);
+          break;
+        default:
+          console.log("Неизвестный тип события:", data.type);
+      }
+    });
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, []);
+
+  // Функция для симуляции прогресса обработки
+  const simulateProcessingProgress = useCallback(async () => {
+    const processingSteps = [
+      { progress: 20, message: "Извлечение текста из PDF..." },
+      { progress: 40, message: "Разбиение на фрагменты..." },
+      { progress: 60, message: "Векторизация текста..." },
+      { progress: 80, message: "Сохранение в базу данных..." },
+      { progress: 100, message: "Обработка завершена!" }
+    ];
+
+    for (const step of processingSteps) {
+      setProcessingProgress(step.progress);
+      setCurrentProcessingStep(step.message);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Задержка для демонстрации
+    }
+  }, []);
+
+  // Функция для обработки реального прогресса от сервера через Socket.IO
+  const handleRealTimeProgress = useCallback(async (responseData: any) => {
+    try {
+      // Проверяем, поддерживает ли сервер реальный прогресс
+      if (responseData?.supportsProgress && socketIdRef.current) {
+        console.log('Используем Socket.IO для отслеживания прогресса');
+        // Socket.IO уже подключен и слушает события в useEffect
+        // Просто ждем завершения обработки
+        return new Promise<void>((resolve) => {
+          // События будут обработаны в useEffect
+          // Просто ждем некоторое время для демонстрации
+          setTimeout(() => {
+            resolve();
+          }, 1000);
+        });
+      } else {
+        // Если Socket.IO недоступен, используем симуляцию
+        console.log('Используем симуляцию прогресса');
+        await simulateProcessingProgress();
+      }
+    } catch (error) {
+      console.error('Ошибка при обработке реального прогресса:', error);
+      // В случае ошибки используем симуляцию
+      await simulateProcessingProgress();
+    }
+  }, [simulateProcessingProgress]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     if (acceptedFiles.length === 0) return;
 
+    // Этап 1: Загрузка файла на сервер
     setIsUploading(true);
-    setProgress(0);
+    setUploadProgress(0);
+    setProcessingProgress(0);
+    setIsProcessing(false);
+    setCurrentProcessingStep("");
 
     const formData = new FormData();
     acceptedFiles.forEach((file) => {
@@ -34,35 +138,106 @@ export default function UploadPage() {
     });
 
     try {
-      const uploadUrl = process.env.NEXT_PUBLIC_UPLOAD_URL;
+      const uploadUrl = process.env.NEXT_PUBLIC_UPLOAD_URL || "http://localhost:5041/api/uploads";
       if (!uploadUrl) {
         throw new Error("Upload URL is not defined");
       }
+
+      // Загрузка файла с отслеживанием прогресса
+      console.log("Начинаем загрузку файла на:", uploadUrl);
+      console.log("Socket ID:", socketIdRef.current);
+      
+      // Запускаем фолбэк: если события прогресса не приходят, плавно двигаем до 95%
+      lastUploadProgressTsRef.current = Date.now();
+      if (uploadFallbackTimerRef.current === null) {
+        uploadFallbackTimerRef.current = window.setInterval(() => {
+          const idleMs = Date.now() - lastUploadProgressTsRef.current;
+          // если 800мс нет новых событий и прогресс < 95 — двигаем на 1%
+          if (idleMs > 800) {
+            setUploadProgress((prev) => (prev < 95 ? prev + 1 : prev));
+            lastUploadProgressTsRef.current = Date.now();
+          }
+        }, 500);
+      }
+
       const response = await axios.post(uploadUrl, formData, {
+        headers: {
+          'X-Socket-ID': socketIdRef.current || '', // Передаем socket ID для связи с Socket.IO
+        },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-            setProgress(percentCompleted);
+            setUploadProgress(percentCompleted);
+            lastUploadProgressTsRef.current = Date.now();
+          } else {
+            // Если total недоступен, плавно увеличиваем прогресс, но не выше 95%
+            setUploadProgress((prev) => {
+              const next = Math.min(prev + 1, 95);
+              return next;
+            });
+            lastUploadProgressTsRef.current = Date.now();
           }
         },
       });
 
       console.log("Загрузка завершена:", response.data);
+
+      // Этап 2: Обработка файла
+      setIsUploading(false);
+      setIsProcessing(true);
+      setUploadProgress(100);
+
+      // Проверяем, поддерживает ли сервер реальный прогресс обработки
+      const supportsRealTimeProgress = response.data?.supportsProgress || false;
+      
+      if (supportsRealTimeProgress) {
+        // Если сервер поддерживает реальный прогресс, используем его
+        await handleRealTimeProgress(response.data);
+      } else {
+        // Иначе симулируем прогресс обработки
+        await simulateProcessingProgress();
+      }
+
+      // Показываем результат
+      if (response.data?.message) {
+        setSuccessMessage(response.data.message);
+      } else {
+        setSuccessMessage("Файл успешно обработан и добавлен в базу данных!");
+      }
+
     } catch (error: unknown) {
+      console.error("Ошибка при загрузке:", error);
+      
       if (axios.isAxiosError(error)) {
-        setErrorMessage(
-          error.response?.data?.message || "Ошибка при загрузке файла"
-        );
+        console.error("Axios error details:", {
+          message: error.message,
+          code: error.code,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText
+        });
+        
+        if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+          setErrorMessage("Ошибка сети. Проверьте, что сервер запущен.");
+        } else {
+          setErrorMessage(
+            error.response?.data?.message || `Ошибка при загрузке файла: ${error.message}`
+          );
+        }
       } else if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
         setErrorMessage("Произошла неизвестная ошибка");
       }
-      console.error("Ошибка при загрузке:", error);
     } finally {
+      if (uploadFallbackTimerRef.current !== null) {
+        clearInterval(uploadFallbackTimerRef.current);
+        uploadFallbackTimerRef.current = null;
+      }
       setIsUploading(false);
+      setIsProcessing(false);
     }
   }, []);
 
@@ -144,7 +319,7 @@ export default function UploadPage() {
         onClick={open}
         sx={{ mt: 6 }}
         startIcon={<CloudUploadIcon />}
-        disabled={isUploading}
+        disabled={isUploading || isProcessing}
       >
         Выбрать файл
       </Button>
@@ -156,18 +331,57 @@ export default function UploadPage() {
         </Box>
       )}
 
+      {/* Полоска прогресса загрузки файла */}
       {isUploading && (
         <Box sx={{ width: "100%", maxWidth: 600, mt: 3 }}>
-          <LinearProgress variant="determinate" value={progress} />
-          <Typography variant="body2" align="center" mt={1}>
-            Загрузка: {progress}%
+          <Typography variant="body2" align="center" mb={1} color="primary">
+            📤 Загрузка файла на сервер
           </Typography>
+          <LinearProgress 
+            variant="determinate" 
+            value={uploadProgress} 
+            sx={{ height: 8, borderRadius: 4 }}
+          />
+          <Typography variant="body2" align="center" mt={1}>
+            {uploadProgress}%
+          </Typography>
+        </Box>
+      )}
+
+      {/* Полоска прогресса обработки */}
+      {isProcessing && (
+        <Box sx={{ width: "100%", maxWidth: 600, mt: 3 }}>
+          <Typography variant="body2" align="center" mb={1} color="secondary">
+            ⚙️ Обработка и векторизация
+          </Typography>
+          <LinearProgress 
+            variant="determinate" 
+            value={processingProgress} 
+            color="secondary"
+            sx={{ height: 8, borderRadius: 4 }}
+          />
+          <Typography variant="body2" align="center" mt={1}>
+            {processingProgress}%
+          </Typography>
+          {currentProcessingStep && (
+            <Typography variant="caption" align="center" display="block" mt={1} color="text.secondary">
+              {currentProcessingStep}
+            </Typography>
+          )}
         </Box>
       )}
       {errorMessage && (
         <Box sx={{ mt: 2, maxWidth: 600 }}>
           <Typography variant="body2" color="error" align="center">
-            {errorMessage}
+            ❌ {errorMessage}
+          </Typography>
+        </Box>
+      )}
+      
+      {successMessage && (
+        <Box sx={{ mt: 2, maxWidth: 600 }}>
+          <Typography variant="body2" color="success.main" align="center">
+            ✅ {successMessage}
           </Typography>
         </Box>
       )}
