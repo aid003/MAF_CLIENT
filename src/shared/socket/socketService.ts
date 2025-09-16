@@ -6,11 +6,14 @@ class SocketService {
   public connect(url: string): Socket {
     if (!this.socket) {
       this.socket = io(url, {
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         timeout: 20000,
         forceNew: true,
         withCredentials: true,
-        autoConnect: true
+        autoConnect: true,
+        path: "/socket.io/",
+        upgrade: true,
+        rememberUpgrade: true,
       });
     }
     return this.socket;
