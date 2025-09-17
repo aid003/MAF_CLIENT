@@ -4,7 +4,7 @@ class SocketService {
   private socket: Socket | null = null;
 
   public connect(url: string): Socket {
-    if (!this.socket) {
+    if (!this.socket || !this.socket.connected) {
       console.log("SocketService: Подключаемся к", url);
       this.socket = io(url, {
         transports: ["websocket", "polling"],
@@ -15,6 +15,9 @@ class SocketService {
         path: "/socket.io/",
         upgrade: true,
         rememberUpgrade: true,
+        reconnection: true,
+        reconnectionDelay: 2000,
+        reconnectionAttempts: 5,
       });
 
       // Добавляем логирование событий
@@ -52,6 +55,14 @@ class SocketService {
 
   public emit<T>(event: string, data?: T): void {
     this.socket?.emit(event, data);
+  }
+
+  public reconnect(): void {
+    if (this.socket) {
+      console.log("SocketService: Принудительное переподключение");
+      this.socket.disconnect();
+      this.socket.connect();
+    }
   }
 }
 

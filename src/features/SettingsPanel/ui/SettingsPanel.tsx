@@ -1,220 +1,83 @@
-import React, { useContext, useEffect, useState } from "react";
+import React from "react";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Divider,
   Box,
-  Typography,
-  Select,
-  MenuItem,
-  Switch,
 } from "@mui/material";
 import {
   Settings as SettingsIcon,
-  Notifications as NotificationsIcon,
-  Person as PersonIcon,
-  Language as LanguageIcon,
-  Archive as ArchiveIcon,
   Security as SecurityIcon,
   Logout as LogoutIcon,
   Info as InfoIcon,
-  Link as LinkIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { ColorModeContext } from "@/shared/themeContext/ThemeContext";
-import { useAuth } from "@/widgets/AuthForm/model/useAuth";
-import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
-import { RootState } from "@/shared/redux/store";
-import { toggleVoiceInput } from "@/shared/redux/slices/voiceSlice";
-import type { SelectChangeEvent } from "@mui/material/Select";
+import { useSettings } from "../../settings/model";
+import { 
+  SettingsSidebar, 
+  GeneralSettings, 
+  SecuritySettings, 
+  AboutSettings, 
+  AccountSettings 
+} from "../../../widgets/settings/ui";
+import { SettingsMenuItem } from "../../../shared/types/settings";
 
 interface SettingsPanelProps {
   open: boolean;
   onClose: () => void;
 }
 
-const menuItems = [
-  { text: "Общее", icon: <SettingsIcon /> },
-  { text: "Аккаунт", icon: <LogoutIcon /> },
-  { text: "Безопасность", icon: <SecurityIcon /> },
-  { text: "О программе", icon: <InfoIcon /> },
+const menuItems: SettingsMenuItem[] = [
+  { id: "general", text: "Общее", icon: <SettingsIcon /> },
+  { id: "account", text: "Аккаунт", icon: <LogoutIcon /> },
+  { id: "security", text: "Безопасность", icon: <SecurityIcon /> },
+  { id: "about", text: "О программе", icon: <InfoIcon /> },
 ];
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) => {
-  const { toggleColorMode } = useContext(ColorModeContext);
-  const dispatch = useDispatch();
-  const { logout } = useAuth();
   const theme = useTheme();
+  
+  // Используем хук для управления настройками
+  const settings = useSettings();
 
-  const isVoiceInputEnabled = useSelector(
-    (state: RootState) => state.voice.isVoiceInputEnabled
-  );
-  const themeModeRedux = useSelector((state: RootState) => state.theme.mode);
-  const [themeMode, setThemeMode] = useState(themeModeRedux);
-  const [language, setLanguage] = useState("ru");
-
-  const [selected, setSelected] = useState("Общее");
-
-  const handleThemeChange = (e: SelectChangeEvent<"light" | "dark">) => {
-    const newMode = e.target.value as "light" | "dark";
-    setThemeMode(newMode);
-    if (newMode !== themeModeRedux) {
-      toggleColorMode();
-    }
-  };
-
-  const renderGeneralSettings = () => (
-    <>
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Общие настройки
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: theme.palette.text.secondary }}
-      >
-        Настройте общие параметры приложения
-      </Typography>
-      <Divider sx={{ mb: 2, borderColor: theme.palette.divider }} />
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography>Тема</Typography>
-        <Select
-          value={themeMode}
-          onChange={handleThemeChange}
-          size="small"
-          sx={{
-            minWidth: 100,
-          }}
-        >
-          <MenuItem value="dark">Тёмная</MenuItem>
-          <MenuItem value="light">Светлая</MenuItem>
-        </Select>
-      </Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography>Язык</Typography>
-        <Select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          size="small"
-          sx={{ minWidth: 150 }}
-        >
-          <MenuItem value="ru">Русский</MenuItem>
-          <MenuItem value="en">English</MenuItem>
-        </Select>
-      </Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography>Голосовой ввод</Typography>
-        <Switch
-          checked={isVoiceInputEnabled}
-          onChange={() => dispatch(toggleVoiceInput())}
-        />
-      </Box>
-    </>
-  );
-
-  const renderSecuritySettings = () => (
-    <>
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Безопасность
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: theme.palette.text.secondary }}
-      >
-        Настройте пароли, двухфакторную аутентификацию и другие меры
-        безопасности
-      </Typography>
-      <Divider sx={{ mb: 2, borderColor: theme.palette.divider }} />
-    </>
-  );
-
-  const renderAboutInfo = () => (
-    <>
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        О программе
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: theme.palette.text.secondary }}
-      >
-        Информация о версии, разработчиках
-      </Typography>
-      <Divider sx={{ mb: 2, borderColor: theme.palette.divider }} />
-      <Box>
-        <Typography>Версия: 1.2.6</Typography>
-        <Typography>
-          Разработчики: Балахадзе А.Г Назаренко П.Е Хакимов Р.Э
-        </Typography>
-      </Box>
-    </>
-  );
-
-  const renderSessionSettings = () => (
-    <>
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Сессия
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: theme.palette.text.secondary }}
-      >
-        Управляйте текущей сессией, выходом из учётной записи и очисткой данных.
-      </Typography>
-      <Divider sx={{ mb: 2, borderColor: theme.palette.divider }} />
-      <Box>
-        <Typography>Выйти на этом устройстве</Typography>
-        <Button
-          variant="outlined"
-          sx={{ mt: 1 }}
-          onClick={() => {
-            logout();
-          }}
-        >
-          Выйти
-        </Button>
-      </Box>
-    </>
-  );
-
+  // Функция для рендеринга контента в зависимости от выбранной секции
   const renderContent = () => {
-    switch (selected) {
+    switch (settings.selectedSection) {
       case "Общее":
-        return renderGeneralSettings();
+        return (
+          <GeneralSettings
+            theme={theme}
+            themeMode={settings.themeMode}
+            language={settings.language}
+            isVoiceInputEnabled={settings.isVoiceInputEnabled}
+            onThemeChange={settings.handleThemeChange}
+            onLanguageChange={settings.handleLanguageChange}
+            onVoiceInputToggle={settings.handleVoiceInputToggle}
+          />
+        );
       case "Безопасность":
-        return renderSecuritySettings();
+        return (
+          <SecuritySettings
+            theme={theme}
+            onTwoFactorToggle={() => console.log('Two factor toggle')}
+            onPasswordChange={() => console.log('Password change')}
+            onSessionTimeoutChange={() => console.log('Session timeout change')}
+          />
+        );
       case "О программе":
-        return renderAboutInfo();
+        return <AboutSettings theme={theme} />;
       case "Аккаунт":
-        return renderSessionSettings();
+        return (
+          <AccountSettings
+            theme={theme}
+            onLogout={settings.handleLogout}
+            onClearCache={() => console.log('Clear cache')}
+            onExportData={() => console.log('Export data')}
+            onDeleteAccount={() => console.log('Delete account')}
+          />
+        );
       default:
         return null;
     }
@@ -235,50 +98,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) => {
         sx={{ p: 0, backgroundColor: theme.palette.background.default }}
       >
         <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
-          <Box
-            sx={{
-              width: "14vw",
-              backgroundColor: theme.palette.background.paper,
-              color: theme.palette.text.primary,
-            }}
-          >
-            <List>
-              {menuItems.map(({ text, icon }) => (
-                <ListItemButton
-                  key={text}
-                  selected={text === selected}
-                  onClick={() => setSelected(text)}
-                  sx={{
-                    borderRadius: 1,
-                    mb: 0.5,
-                    "&.Mui-selected": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? theme.palette.grey[800]
-                          : theme.palette.grey[200],
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      color:
-                        text === selected
-                          ? theme.palette.primary.main
-                          : theme.palette.text.secondary,
-                    }}
-                  >
-                    {icon}
-                  </ListItemIcon>
-                  <ListItemText primary={text} />
-                </ListItemButton>
-              ))}
-            </List>
-          </Box>
+          <SettingsSidebar
+            menuItems={menuItems}
+            selectedSection={settings.selectedSection}
+            onSectionChange={settings.handleSectionChange}
+            theme={theme}
+          />
 
           <Box
             sx={{
               flexGrow: 1,
-              height: "55vh", // увеличена высота модального контента
+              height: "55vh",
               px: 2,
               color: theme.palette.text.primary,
               overflowY: "auto",
