@@ -14,6 +14,22 @@ import axios from "axios";
 import { FileRejection } from "react-dropzone";
 import { socketService } from "../../../shared/socket/socketService";
 
+// Типы для Socket.IO событий
+interface UploadProgressData {
+  type: 'file_start' | 'processing_start' | 'file_complete' | 'all_complete';
+  filename?: string;
+  fileIndex?: number;
+  totalFiles?: number;
+  progress?: number;
+  message?: string;
+}
+
+// Типы для ответа сервера
+interface UploadResponse {
+  message?: string;
+  supportsProgress?: boolean;
+}
+
 export default function UploadPage() {
   const theme = useTheme();
 
@@ -45,25 +61,25 @@ export default function UploadPage() {
     });
 
     // Слушаем события прогресса загрузки
-    socket.on("upload_progress", (data: any) => {
+    socket.on("upload_progress", (data: UploadProgressData) => {
       console.log("Получен прогресс загрузки:", data);
       
       switch (data.type) {
         case "file_start":
-          setCurrentProcessingStep(`Начинаю обработку файла ${data.filename} (${data.fileIndex}/${data.totalFiles})`);
-          setProcessingProgress(data.progress);
+          setCurrentProcessingStep(`Начинаю обработку файла ${data.filename || 'неизвестный'} (${data.fileIndex || 0}/${data.totalFiles || 0})`);
+          setProcessingProgress(data.progress || 0);
           break;
         case "processing_start":
-          setCurrentProcessingStep(data.message);
+          setCurrentProcessingStep(data.message || "Начинаю обработку...");
           break;
         case "file_complete":
-          setCurrentProcessingStep(`Файл ${data.filename} обработан (${data.fileIndex}/${data.totalFiles})`);
-          setProcessingProgress(data.progress);
+          setCurrentProcessingStep(`Файл ${data.filename || 'неизвестный'} обработан (${data.fileIndex || 0}/${data.totalFiles || 0})`);
+          setProcessingProgress(data.progress || 0);
           break;
         case "all_complete":
           setProcessingProgress(100);
           setCurrentProcessingStep("Обработка завершена!");
-          setSuccessMessage(data.message);
+          setSuccessMessage(data.message || "Обработка завершена успешно!");
           break;
         default:
           console.log("Неизвестный тип события:", data.type);
@@ -93,7 +109,7 @@ export default function UploadPage() {
   }, []);
 
   // Функция для обработки реального прогресса от сервера через Socket.IO
-  const handleRealTimeProgress = useCallback(async (responseData: any) => {
+  const handleRealTimeProgress = useCallback(async (responseData: UploadResponse) => {
     try {
       // Проверяем, поддерживает ли сервер реальный прогресс
       if (responseData?.supportsProgress && socketIdRef.current) {
@@ -239,7 +255,7 @@ export default function UploadPage() {
       setIsUploading(false);
       setIsProcessing(false);
     }
-  }, []);
+  }, [handleRealTimeProgress, simulateProcessingProgress]);
 
   const onDropRejected = useCallback((fileRejections: FileRejection[]) => {
     const errors = fileRejections
