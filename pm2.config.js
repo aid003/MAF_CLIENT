@@ -6,20 +6,6 @@ module.exports = {
       args: 'start',
       instances: 1,
       exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3005,
-        HOSTNAME: '0.0.0.0',
-        NEXT_PUBLIC_SOCKET_URL: 'http://192.168.63.222',
-        NEXT_PUBLIC_UPLOAD_URL: 'http://192.168.63.222/api/uploads'
-      },
-      env_development: {
-        NODE_ENV: 'development',
-        PORT: 3005,
-        HOSTNAME: '0.0.0.0',
-        NEXT_PUBLIC_SOCKET_URL: 'http://localhost:5041',
-        NEXT_PUBLIC_UPLOAD_URL: 'http://localhost:5041/api/uploads'
-      },
       // Автозапуск при перезагрузке
       autorestart: true,
       watch: false,
