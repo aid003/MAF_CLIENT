@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
           {
             key: "Access-Control-Allow-Origin",
             value: process.env.NODE_ENV === 'production' 
-              ? process.env.NEXT_PUBLIC_FRONTEND_URL || "*"
-              : "http://localhost:3926",
+              ? process.env.NEXT_PUBLIC_FRONTEND_URL || "http://192.168.63.222"
+              : "http://localhost:3005",
           },
           {
             key: "Access-Control-Allow-Methods",

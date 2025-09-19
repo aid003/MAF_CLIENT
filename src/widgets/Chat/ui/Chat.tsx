@@ -63,9 +63,13 @@ export default function Chat() {
   }, [messages]);
 
   useEffect(() => {
-    const socket = socketService.connect(
-      process.env.NEXT_PUBLIC_SOCKET_API_URL!
-    );
+    // Безопасный выбор URL с fallback
+    const SOCKET_URL =
+      typeof window !== 'undefined'
+        ? (process.env.NEXT_PUBLIC_SOCKET_API_URL || window.location.origin)
+        : (process.env.NEXT_PUBLIC_SOCKET_API_URL || 'http://127.0.0.1:5041');
+
+    const socket = socketService.connect(SOCKET_URL);
 
     socket.on("connect", () => {
       console.log("Подключились к сокету");
